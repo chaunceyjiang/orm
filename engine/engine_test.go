@@ -19,3 +19,21 @@ func TestNewEngine(t *testing.T) {
 	}
 	ormlog.Debug(name)
 }
+
+func TestNewEngine2(t *testing.T) {
+	engine, err := NewEngine("sqlite3", "../orm.db")
+	if err != nil {
+		ormlog.Error(err)
+		t.FailNow()
+	}
+	defer engine.Close()
+
+	s := engine.NewSession()
+	_, _ = s.Raw("DROP TABLE IF EXISTS Student;").Exec()
+	_, _ = s.Raw("CREATE TABLE Student(Name text);").Exec()
+	_, _ = s.Raw("CREATE TABLE Student(Name text);").Exec()
+
+	result, _ := s.Raw("INSERT INTO Student(`Name`) values (?), (?)", "Foo", "Bar").Exec()
+	count, _ := result.RowsAffected()
+	ormlog.Debug(count)
+}
