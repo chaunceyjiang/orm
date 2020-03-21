@@ -36,6 +36,8 @@ func (s *Schema) GetField(name string) *Field {
 func Parse(dest interface{}, d dialect.Dialect) *Schema {
 	modelType := reflect.Indirect(reflect.ValueOf(dest)).Type()
 
+	// 下载这种反射方法，没有办法处理 dest是指针的情况，反射指针的Type是空值
+	//modelType := reflect.ValueOf(dest).Type()
 	schema := &Schema{
 		Model:    dest,
 		Name:     modelType.Name(),

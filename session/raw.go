@@ -3,7 +3,9 @@ package session
 
 import (
 	"database/sql"
+	"orm/dialect"
 	"orm/ormlog"
+	"orm/schema"
 	"strings"
 )
 
@@ -14,11 +16,15 @@ type Session struct {
 	sql strings.Builder
 	// sqlVars 存储SQL语句中的变量
 	sqlVars []interface{}
+
+	dialect dialect.Dialect // 数据库dialect,用来屏蔽不同数据库之间的差异
+
+	refTable *schema.Schema // 数据库表与对象Model 的连接
 }
 
 // New 返回一个Session 连接
-func New(db *sql.DB) *Session {
-	return &Session{db: db}
+func New(db *sql.DB, dialect dialect.Dialect) *Session {
+	return &Session{db: db, dialect: dialect}
 }
 
 // DB 获取原生DB
@@ -39,8 +45,6 @@ func (s *Session) Raw(sql string, values ...interface{}) *Session {
 	return s
 }
 
-
-
 // Exec 执行Session 中存储的SQL 对sql.DB.Exec 的封装
 func (s *Session) Exec() (result sql.Result, err error) {
 	defer s.Clear()
@@ -54,13 +58,13 @@ func (s *Session) Exec() (result sql.Result, err error) {
 func (s *Session) QueryRaw() *sql.Row {
 	defer s.Clear()
 	ormlog.InfoF("SQL %s Params %v", s.sql.String(), s.sqlVars)
-	return s.DB().QueryRow(s.sql.String(),s.sqlVars...)
+	return s.DB().QueryRow(s.sql.String(), s.sqlVars...)
 }
 
-func (s *Session) QueryRaws()(rows *sql.Rows,err error) {
+func (s *Session) QueryRaws() (rows *sql.Rows, err error) {
 	defer s.Clear()
 	ormlog.InfoF("SQL %s Params %v", s.sql.String(), s.sqlVars)
-	if rows,err = s.DB().Query(s.sql.String(),s.sqlVars...);err!=nil{
+	if rows, err = s.DB().Query(s.sql.String(), s.sqlVars...); err != nil {
 		ormlog.Error(err)
 	}
 	return
