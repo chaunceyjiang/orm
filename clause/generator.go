@@ -24,6 +24,9 @@ const (
 	LIMIT
 	WHERE
 	ORDERBY
+	UPDATE
+	DELETE
+	COUNT
 )
 
 type generator func(values ...interface{}) (string, []interface{})
@@ -99,6 +102,27 @@ func _orderBy(values ...interface{}) (string, []interface{}) {
 	return fmt.Sprintf("ORDER BY %s", values[0]), []interface{}{}
 }
 
+// _delete 删除
+func _delete(values ...interface{}) (string, []interface{}) {
+	return fmt.Sprintf("DELETE FROM %s", values[0]), []interface{}{}
+}
+
+// _update 更新  第一个参数表名，第二个是map ，待更新的键值对
+func _update(values ...interface{}) (string, []interface{}) {
+	tableName := values[0]
+	kv := values[1].(map[string]interface{})
+	var keys []string
+	var vars []interface{}
+	for k, v := range kv {
+		keys = append(keys, k+" = ? ")
+		vars = append(vars, v)
+	}
+	return fmt.Sprintf("UPDATE %s SET %s", tableName, strings.Join(keys, ",")), vars
+}
+
+func _count(values ...interface{}) (string, []interface{}) {
+	return _select(values[0], []string{"COUNT(*)"})
+}
 func init() {
 	generators = make(map[Type]generator)
 	generators[LIMIT] = _limit
@@ -107,4 +131,7 @@ func init() {
 	generators[INSERT] = _insert
 	generators[VALUES] = _values
 	generators[ORDERBY] = _orderBy
+	generators[UPDATE] = _update
+	generators[COUNT] = _count
+	generators[DELETE] = _delete
 }

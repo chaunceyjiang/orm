@@ -74,3 +74,54 @@ func (s *Session) Find(objs interface{}) error {
 
 	return raws.Close()
 }
+
+// Update 支持两张传参方式 1. map[string]interface{} 2. kv list: "Name","for","Age",16
+// 依赖where语法
+func (s *Session) Update(kv ...interface{}) (int64, error) {
+	m, ok := kv[0].(map[string]interface{})
+	if !ok {
+		// 如果不是map方式，
+		m = make(map[string]interface{})
+
+		for i := 0; i < len(kv); i+=2 {
+			m[kv[i].(string)] = kv[i+1]
+		}
+	}
+
+	s.clause.Set(clause.UPDATE, s.RefTable().Name, m)
+
+	sql, sqlVars := s.clause.BuildSQL(clause.UPDATE, clause.WHERE)
+	result, err := s.Raw(sql, sqlVars...).Exec()
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+// Delete 删除语句
+// 依赖where语法
+func (s *Session) Delete()(int64,error) {
+	s.clause.Set(clause.DELETE,s.RefTable().Name)
+	sql, vars := s.clause.BuildSQL(clause.DELETE, clause.WHERE)
+	result, err := s.Raw(sql, vars...).Exec()
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+// Count records with where clause
+func (s *Session) Count() (int64, error) {
+	s.clause.Set(clause.COUNT, s.RefTable().Name)
+	sql, vars := s.clause.BuildSQL(clause.COUNT, clause.WHERE)
+	row := s.Raw(sql, vars...).QueryRaw()
+	var tmp int64
+	if err := row.Scan(&tmp); err != nil {
+		return 0, err
+	}
+	return tmp, nil
+}
+
+
+
+

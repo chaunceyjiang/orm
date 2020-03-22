@@ -8,17 +8,18 @@ import (
 	"testing"
 )
 
-func TestSession_Insert(t *testing.T) {
-	type UserTest struct {
-		// 主键约束
-		Name string `orm:"PRIMARY KEY"`
-		Age  int
-	}
+type UserTest struct {
+	// 主键约束
+	Name string `orm:"PRIMARY KEY"`
+	Age  int
+}
+
+func testHelper(t *testing.T) *Session {
 	db, err := sql.Open("sqlite3", "../orm.db")
 	if err != nil {
 		t.FailNow()
 	}
-	defer db.Close()
+
 	d, _ := dialect.GetDialect("sqlite3")
 	sess := New(db, d)
 
@@ -42,39 +43,19 @@ func TestSession_Insert(t *testing.T) {
 		t.FailNow()
 	}
 
+	return sess
+}
+func TestSession_Insert(t *testing.T) {
+	sess := testHelper(t)
 	sess.DropTable()
+
 }
 
 func TestSession_Find(t *testing.T) {
-	type UserTest struct {
-		// 主键约束
-		Name string `orm:"PRIMARY KEY"`
-		Age  int
-	}
-	db, err := sql.Open("sqlite3", "../orm.db")
-	if err != nil {
-		t.FailNow()
-	}
-	defer db.Close()
-	d, _ := dialect.GetDialect("sqlite3")
-	sess := New(db, d)
-
-	sess = sess.Model(&UserTest{})
-
-	if !sess.HasTable() {
-		sess.CreateTable()
-	}
-	defer sess.DropTable()
-	sess.Insert(&UserTest{
-		Name: "foo",
-		Age:  18,
-	}, &UserTest{
-		Name: "bar",
-		Age:  25,
-	})
+	sess := testHelper(t)
 
 	var users []UserTest
-	err = sess.Find(&users)
+	err := sess.Find(&users)
 
 	if err != nil {
 		ormlog.Error(err)
@@ -89,5 +70,11 @@ func TestSession_Find(t *testing.T) {
 		ormlog.Error("find age error")
 		t.FailNow()
 	}
+	sess.DropTable()
+}
 
+func TestSession_Update(t *testing.T) {
+	sess:=testHelper(t)
+	sess.Update("Name","barr")
+	//sess.DropTable()
 }
