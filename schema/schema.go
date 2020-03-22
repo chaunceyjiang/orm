@@ -31,6 +31,18 @@ func (s *Schema) GetField(name string) *Field {
 	return s.fieldMap[name]
 }
 
+// RecordValues 将一个obj的值取出来，转化未SQL的参数
+func (s *Schema) RecordValues(obj interface{}) []interface{} {
+	destValue := reflect.Indirect(reflect.ValueOf(obj))
+	var fieldValues []interface{}
+	for _, field := range s.Fields {
+		// dest 必须是结构体，然后根据字段名找到该字段
+		// Interface() 将当前的值转化为一个 接口
+		fieldValues = append(fieldValues, destValue.FieldByName(field.Name).Interface())
+	}
+	return fieldValues
+}
+
 // Parse 将任意对象Model解析为数据库中的一张表
 // 利用反射
 func Parse(dest interface{}, d dialect.Dialect) *Schema {

@@ -3,6 +3,7 @@ package session
 
 import (
 	"database/sql"
+	"orm/clause"
 	"orm/dialect"
 	"orm/ormlog"
 	"orm/schema"
@@ -20,6 +21,8 @@ type Session struct {
 	dialect dialect.Dialect // 数据库dialect,用来屏蔽不同数据库之间的差异
 
 	refTable *schema.Schema // 数据库表与对象Model 的连接
+
+	clause clause.Clause // 存储未编译的SQL
 }
 
 // New 返回一个Session 连接
@@ -36,6 +39,7 @@ func (s *Session) DB() *sql.DB {
 func (s *Session) Clear() {
 	s.sqlVars = nil
 	s.sql.Reset()
+	s.clause = clause.Clause{}
 }
 
 func (s *Session) Raw(sql string, values ...interface{}) *Session {
