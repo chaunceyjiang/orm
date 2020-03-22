@@ -30,8 +30,7 @@ func TestSession_CreateTable(t *testing.T) {
 		Age:  18,
 	})
 	if sess.HasTable() == true {
-		ormlog.Error("UserTest EXISTS!")
-		t.FailNow()
+		sess.DropTable()
 	}
 
 	sess.CreateTable()

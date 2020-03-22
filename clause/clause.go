@@ -26,6 +26,7 @@ func (c *Clause) BuildSQL(orders ...Type) (string, []interface{}) {
 	var vars []interface{}
 
 	for _, order := range orders {
+		// 如果没有这个子句，则不做任何处理。
 		if sql, ok := c.sql[order]; ok {
 			// 将各个子句，拼接成一个完整的SQL语句
 			sqls = append(sqls, sql)

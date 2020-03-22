@@ -25,10 +25,10 @@ func testHelper(t *testing.T) *Session {
 
 	sess = sess.Model(&UserTest{})
 
-	if !sess.HasTable() {
-		sess.CreateTable()
+	if sess.HasTable() {
+		sess.DropTable()
 	}
-
+	sess.CreateTable()
 	n, err := sess.Insert(&UserTest{
 		Name: "foo",
 		Age:  18,
@@ -46,9 +46,7 @@ func testHelper(t *testing.T) *Session {
 	return sess
 }
 func TestSession_Insert(t *testing.T) {
-	sess := testHelper(t)
-	sess.DropTable()
-
+	testHelper(t)
 }
 
 func TestSession_Find(t *testing.T) {
@@ -70,11 +68,25 @@ func TestSession_Find(t *testing.T) {
 		ormlog.Error("find age error")
 		t.FailNow()
 	}
-	sess.DropTable()
 }
 
 func TestSession_Update(t *testing.T) {
-	sess:=testHelper(t)
-	sess.Update("Name","barr")
-	//sess.DropTable()
+	sess := testHelper(t)
+	sess.Where("Age = ?", 25).Update("Name", "barr")
+	var user []UserTest
+	sess.Where("Age = ?", 25).Find(&user)
+	if user[0].Name != "barr" {
+		ormlog.Error("Update error")
+		t.FailNow()
+	}
+}
+
+func TestSession_First(t *testing.T) {
+	sess := testHelper(t)
+	var user UserTest
+	sess.Where("Age = ?",25).First(&user)
+	if user.Name != "bar" {
+		ormlog.Error("First error")
+		t.FailNow()
+	}
 }

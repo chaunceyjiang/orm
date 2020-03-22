@@ -48,7 +48,8 @@ func (s *Session) Find(objs interface{}) error {
 	// _select(tableName string, fields []string)
 	s.clause.Set(clause.SELECT, table.Name, table.FieldNames)
 
-	sql, sqlVars := s.clause.BuildSQL(clause.SELECT)
+	// 将链式调用前面的一起build
+	sql, sqlVars := s.clause.BuildSQL(clause.SELECT, clause.WHERE, clause.ORDERBY, clause.LIMIT)
 
 	raws, err := s.Raw(sql, sqlVars...).QueryRaws()
 	if err != nil {
@@ -83,7 +84,7 @@ func (s *Session) Update(kv ...interface{}) (int64, error) {
 		// 如果不是map方式，
 		m = make(map[string]interface{})
 
-		for i := 0; i < len(kv); i+=2 {
+		for i := 0; i < len(kv); i += 2 {
 			m[kv[i].(string)] = kv[i+1]
 		}
 	}
@@ -100,8 +101,8 @@ func (s *Session) Update(kv ...interface{}) (int64, error) {
 
 // Delete 删除语句
 // 依赖where语法
-func (s *Session) Delete()(int64,error) {
-	s.clause.Set(clause.DELETE,s.RefTable().Name)
+func (s *Session) Delete() (int64, error) {
+	s.clause.Set(clause.DELETE, s.RefTable().Name)
 	sql, vars := s.clause.BuildSQL(clause.DELETE, clause.WHERE)
 	result, err := s.Raw(sql, vars...).Exec()
 	if err != nil {
@@ -122,6 +123,32 @@ func (s *Session) Count() (int64, error) {
 	return tmp, nil
 }
 
+// Limit 结合其他语法一起使用
+func (s *Session) Limit(num int) *Session {
+	s.clause.Set(clause.LIMIT, num)
+	return s
+}
 
+// Where 结合其他语法一起使用
+func (s *Session) Where(desc string, args ...interface{}) *Session {
+	var vars []interface{}
+	s.clause.Set(clause.WHERE, append(append(vars, desc), args...)...)
+	return s
+}
 
+// OrderBy 结合其他语法一起使用
+func (s *Session) OrderBy(desc string) *Session {
+	s.clause.Set(clause.ORDERBY, desc)
+	return s
+}
 
+func (s *Session) First(value interface{}) error {
+	dest := reflect.Indirect(reflect.ValueOf(value))
+	// 根据传入的对象，创建一个对应的S
+	destSlice := reflect.New(reflect.SliceOf(dest.Type())).Elem()
+	if err := s.Limit(1).Find(destSlice.Addr().Interface()); err != nil {
+		return errors.New("Not Found ")
+	}
+	dest.Set(destSlice.Index(0))
+	return nil
+}
