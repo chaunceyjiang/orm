@@ -23,7 +23,19 @@ type Session struct {
 	refTable *schema.Schema // 数据库表与对象Model 的连接
 
 	clause clause.Clause // 存储未编译的SQL
+
+	tx *sql.Tx // 支持事物
 }
+
+type CommonDB interface {
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...interface{}) *sql.Row
+	Exec(query string, args ...interface{}) (sql.Result, error)
+}
+
+// 检查是否实现CommonDB接口
+var _ CommonDB = (*sql.DB)(nil)
+var _ CommonDB = (*sql.Tx)(nil)
 
 // New 返回一个Session 连接
 func New(db *sql.DB, dialect dialect.Dialect) *Session {
@@ -31,7 +43,11 @@ func New(db *sql.DB, dialect dialect.Dialect) *Session {
 }
 
 // DB 获取原生DB
-func (s *Session) DB() *sql.DB {
+// CommonDB 返回一个公共DB
+func (s *Session) DB() CommonDB {
+	if s.tx != nil {
+		return s.tx
+	}
 	return s.db
 }
 

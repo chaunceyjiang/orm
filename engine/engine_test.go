@@ -37,3 +37,7 @@ func TestNewEngine2(t *testing.T) {
 	count, _ := result.RowsAffected()
 	ormlog.Debug(count)
 }
+
+func TestEngine_Transaction(t *testing.T) {
+
+}
