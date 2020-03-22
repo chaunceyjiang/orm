@@ -3,12 +3,14 @@ package engine
 
 import (
 	"database/sql"
+	"orm/dialect"
 	"orm/ormlog"
 	"orm/session"
 )
 
 type Engine struct {
-	db *sql.DB
+	db      *sql.DB
+	dialect dialect.Dialect
 }
 
 // NewEngine
@@ -24,8 +26,12 @@ func NewEngine(driver string, source string) (e *Engine, err error) {
 		ormlog.Error(err)
 		return
 	}
-
-	e = &Engine{db: db}
+	d, ok := dialect.GetDialect(driver)
+	if !ok {
+		ormlog.ErrorF("dialect %s Not Found",driver)
+		return
+	}
+	e = &Engine{db: db,dialect:d}
 
 	ormlog.InfoF("Connect database %s success", driver)
 
@@ -42,5 +48,5 @@ func (e *Engine) Close() {
 
 // NewSession 创建一个与数据库交互的Session
 func (e *Engine) NewSession() *session.Session {
-	return session.New(e.db)
+	return session.New(e.db, e.dialect)
 }
