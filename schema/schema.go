@@ -17,6 +17,10 @@ type Field struct {
 	Tag  string // 对象字段的Tag
 }
 
+type ITableName interface {
+	TableName() string
+}
+
 // Schema 代表数据库中的一张表
 type Schema struct {
 	Model      interface{}       // 被映射对象Model
@@ -50,9 +54,16 @@ func Parse(dest interface{}, d dialect.Dialect) *Schema {
 
 	// 下载这种反射方法，没有办法处理 dest是指针的情况，反射指针的Type是空值
 	//modelType := reflect.ValueOf(dest).Type()
+	var tableName string
+	t, ok := dest.(ITableName)
+	if !ok {
+		tableName = modelType.Name()
+	} else {
+		tableName = t.TableName()
+	}
 	schema := &Schema{
 		Model:    dest,
-		Name:     modelType.Name(),
+		Name:     tableName,
 		fieldMap: make(map[string]*Field),
 	}
 	// 依次获取该对象的每一个字段
